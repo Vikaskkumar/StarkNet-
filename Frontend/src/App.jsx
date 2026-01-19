@@ -9,7 +9,7 @@ import Profile from './pages/Profile'
 import Signup from './pages/Signup'
 import Signin from './pages/Signin'
 import CreatePost from './pages/CreatePost'
-import Modal from './components/modal'
+import Modal from './components/Modal'
 import UserProfile from './components/UserProfile'
 
 import 'react-toastify/dist/ReactToastify.css'
