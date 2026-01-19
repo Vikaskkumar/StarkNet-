@@ -20,8 +20,7 @@ const userSchema = new mongoose.Schema({
     },
 
     Photo:{
-        type:String,
-        required:true
+        type:String
     },
 
     followers:[{

@@ -16,8 +16,7 @@ export default function Signup() {
 
   const postData = () => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    const passRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    
 
     if (!name || !userName || !email || !password) {
       notifyError("All fields are required");
@@ -29,11 +28,7 @@ export default function Signup() {
       return;
     }
 
-    if (!passRegex.test(password)) {
-      notifyError("Use a strong password");
-      return;
-    }
-
+   
     fetch("/signup", {
       method: "POST",
       headers: {

@@ -10,41 +10,41 @@ const requireLogin = require('../middlewares/requireLogin.js');
 
 
 
-router.post('/signup', (req, res) => {
-    const { name, userName, email, password } = req.body;
+router.post('/signup', async (req, res) => {
+    try {
+        const { name, userName, email, password } = req.body;
 
-    if (!name || !email || !userName || !password) {
-        return res.status(422).json({ error: "please add all fields" });
+        if (!name || !email || !userName || !password) {
+            return res.status(422).json({ error: "please add all fields" });
+        }
+
+        const savedUser = await USER.findOne({
+            $or: [{ email }, { userName }]
+        });
+
+        if (savedUser) {
+            return res.status(422).json({ error: "User already exist with email or username" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        const user = new USER({
+            name,
+            email,
+            userName,
+            password: hashedPassword
+        });
+
+        await user.save();
+
+        res.json({ message: "Registered successfully" });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "Server error" });
     }
-
-    USER.findOne({ $or: [{ email: email }, { userName: userName }] })
-        .then((savedUser) => {
-
-            if (savedUser) {
-                return res.status(422).json({ error: "User already exist with email or username" });
-            }
-
-            bcrypt.hash(password, 12).then((hasedPassword) => {
-                const user = new USER({
-                    name,
-                    email,
-                    userName,
-                    password: hasedPassword
-                });
-
-                user.save()
-                    .then((user) => {
-                        res.json({ messsage: "Registered successfully" })
-                    })
-                    .catch(err => {
-                        res.json({ error: "not registered due to error" })
-                    })
-            })
-
-        })
-
-
 });
+
 
 router.post("/signin", async (req, res) => {
 
