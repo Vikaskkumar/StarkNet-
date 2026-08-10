@@ -1,21 +1,30 @@
-const mongoose = require('mongoose');
-const {mongoUrl} = require('../keys.js')
+const mongoose = require("mongoose");
+const { mongoUrl } = require("../keys.js");
 
-const Dbconnection = async ()=>{
-    if (!mongoUrl) {
-        throw new Error("MONGODB_URI is not configured");
-    }
+let connectionPromise;
 
-    try{
-        await mongoose.connect(mongoUrl);
-        console.log("Db connected successfully");
+function Dbconnection() {
+  if (!mongoUrl) {
+    return Promise.reject(new Error("MONGODB_URI is not configured"));
+  }
 
-    }
-    catch(error){
-        console.error("Db connection error:", error.message);
+  if (mongoose.connection.readyState === 1) {
+    return Promise.resolve(mongoose.connection);
+  }
+
+  if (!connectionPromise) {
+    connectionPromise = mongoose.connect(mongoUrl)
+      .then((connection) => {
+        console.log("Database connected successfully");
+        return connection;
+      })
+      .catch((error) => {
+        connectionPromise = undefined;
         throw error;
-    }
+      });
+  }
+
+  return connectionPromise;
 }
 
 module.exports = Dbconnection;
-
