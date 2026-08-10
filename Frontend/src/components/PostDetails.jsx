@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function PostDetails({ post, close, setPosts }) {
+export default function PostDetails({ post, close, setPosts, showDelete = true }) {
 
   const handleDelete = async () => {
     const confirmDelete = window.confirm("Are you sure you want to delete this post?");
@@ -55,7 +55,7 @@ export default function PostDetails({ post, close, setPosts }) {
 
           {/* header */}
           <div className="flex items-center justify-between border-b border-slate-700 pb-2">
-            <h2 className="font-semibold">{post.postedBy.name}</h2>
+            <h2 className="font-semibold">{post.postedBy?.name || "Unknown"}</h2>
             <button
               onClick={close}
               className="text-xl hover:opacity-70"
@@ -73,12 +73,14 @@ export default function PostDetails({ post, close, setPosts }) {
           </p>
 
           {/* delete */}
-          <button
-            onClick={handleDelete}
-            className="mt-auto rounded-lg bg-red-600 py-2 text-white transition hover:bg-red-700"
-          >
-            Delete Post
-          </button>
+          {showDelete && (
+            <button
+              onClick={handleDelete}
+              className="mt-auto rounded-lg bg-red-600 py-2 text-white transition hover:bg-red-700"
+            >
+              Delete Post
+            </button>
+          )}
 
         </div>
       </div>

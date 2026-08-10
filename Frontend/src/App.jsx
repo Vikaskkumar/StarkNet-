@@ -1,5 +1,4 @@
-import React, { useState } from 'react'
-import { createContext } from 'react'
+import { useState } from 'react'
 import { LoginContext } from './context/LoginContext'
 import Navbar from './components/Navbar'
 import {Routes,Route, Navigate} from 'react-router-dom'
@@ -20,24 +19,24 @@ import Myfollowingpost from './pages/Myfollowingpost'
 
 const App = () => {
 
-  const [userLogin, setuserLogin] = useState(false);
+  const [userLogin, setuserLogin] = useState(() => Boolean(localStorage.getItem('jwt')));
   const [modalOpen, setmodalOpen] = useState(false);
 
 
   return (
      <> 
-       <LoginContext.Provider value={{setuserLogin,setmodalOpen}}>
+       <LoginContext.Provider value={{userLogin, setuserLogin, setmodalOpen}}>
 
         <Navbar login={userLogin} />
 
         <Routes>
-          <Route path='/' element={userLogin ? <Home/> : <Navigate to="/Signin" />}> </Route>
+          <Route path='/' element={userLogin ? <Home/> : <Navigate to="/Signin" replace />}> </Route>
           <Route path='/Signup' element={<Signup/>}> </Route>
           <Route path='/Signin' element={<Signin/>}> </Route>
-          <Route exect path='/Profile' element={<Profile/>}> </Route>
-          <Route path='/CreatePost' element={<CreatePost/>}> </Route>
-          <Route path='/profile/:userid' element={<UserProfile/>}> </Route>
-          <Route path='/followingpost' element={<Myfollowingpost/>}> </Route>
+          <Route path='/Profile' element={userLogin ? <Profile/> : <Navigate to="/Signin" replace />}> </Route>
+          <Route path='/CreatePost' element={userLogin ? <CreatePost/> : <Navigate to="/Signin" replace />}> </Route>
+          <Route path='/profile/:userid' element={userLogin ? <UserProfile/> : <Navigate to="/Signin" replace />}> </Route>
+          <Route path='/followingpost' element={userLogin ? <Myfollowingpost/> : <Navigate to="/Signin" replace />}> </Route>
         </Routes>
         <ToastContainer theme='dark'/>
         {modalOpen && <Modal />}

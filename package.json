@@ -8,14 +8,20 @@
   "main": "index.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon --watch .env --ext js,mjs,cjs,json,env app.js",
+    "build": "npm --prefix Frontend ci && npm --prefix Frontend run build"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.1.2",
+    "mongoose": "^9.1.2"
+  },
+  "devDependencies": {
     "nodemon": "^3.1.11"
   }
 }

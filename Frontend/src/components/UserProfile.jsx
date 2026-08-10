@@ -1,32 +1,41 @@
 import React, { useEffect, useState } from "react";
 import PostDetails from "../components/PostDetails";
 import profilepic from "../assets/pics/images (13).jpeg";
+import { useParams } from "react-router-dom";
 
 export default function UserProfile({ userid }) {
   const [posts, setPosts] = useState([]);
   const [user, setUser] = useState(null);
   const [following, setFollowing] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const { userid: routeUserId } = useParams();
+  const profileId = userid || routeUserId;
 
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUserId = currentUser._id;
 
   useEffect(() => {
-    if (!userid) return; 
+    if (!profileId) return;
 
-    fetch(`/user/${userid}`, {
+    fetch(`/user/${profileId}`, {
       headers: {
         Authorization: "Bearer " + localStorage.getItem("jwt"),
       },
     })
-      .then(res => res.json())
+      .then(async (res) => {
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "Unable to load profile");
+        return result;
+      })
       .then(result => {
         setUser(result.user);
-        setPosts(result.posts);
-        setFollowing(result.user.followers?.includes(currentUser._id));
+        setPosts(Array.isArray(result.posts) ? result.posts : []);
+        setFollowing(result.user.followers?.includes(currentUserId));
       })
       .catch(console.log);
-  }, [userid]);
+  }, [profileId, currentUserId]);
 
-  if (!userid) return null;
+  if (!profileId) return null;
   if (!user) return null;
 
   const followUser = () => {
@@ -36,7 +45,7 @@ export default function UserProfile({ userid }) {
         "Content-Type": "application/json",
         Authorization: "Bearer " + localStorage.getItem("jwt"),
       },
-      body: JSON.stringify({ followId: userid }),
+      body: JSON.stringify({ followId: profileId }),
     })
       .then(res => res.json())
       .then(() => {
@@ -55,7 +64,7 @@ export default function UserProfile({ userid }) {
         "Content-Type": "application/json",
         Authorization: "Bearer " + localStorage.getItem("jwt"),
       },
-      body: JSON.stringify({ followId: userid }),
+      body: JSON.stringify({ followId: profileId }),
     })
       .then(res => res.json())
       .then(() => {
@@ -75,12 +84,11 @@ export default function UserProfile({ userid }) {
 
         {/* PROFILE */}
         <div className="flex items-center gap-6 border-b border-gray-800 pb-6">
-          {user.photo && (
-            <img
-              src={user.photo}
-              className="h-28 w-28 rounded-full object-cover"
-            />
-          )}
+          <img
+            src={user.Photo || profilepic}
+            alt=""
+            className="h-28 w-28 rounded-full object-cover"
+          />
 
           <div className="flex-1">
             <h1 className="text-2xl font-semibold">{user.name}</h1>
@@ -119,11 +127,20 @@ export default function UserProfile({ userid }) {
               key={post._id}
               src={post.photo}
               onClick={() => setSelectedPost(post)}
+              alt="post"
               className="aspect-square object-cover cursor-pointer"
             />
           ))}
         </div>
       </div>
+      {selectedPost && (
+        <PostDetails
+          post={selectedPost}
+          close={() => setSelectedPost(null)}
+          setPosts={setPosts}
+          showDelete={currentUser._id === user._id}
+        />
+      )}
     </div>
   );
 }

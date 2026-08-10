@@ -13,13 +13,15 @@ const requireLogin = require('../middlewares/requireLogin.js');
 router.post('/signup', async (req, res) => {
     try {
         const { name, userName, email, password } = req.body;
+        const normalizedEmail = email?.trim().toLowerCase();
+        const normalizedUserName = userName?.trim();
 
         if (!name || !email || !userName || !password) {
             return res.status(422).json({ error: "please add all fields" });
         }
 
         const savedUser = await USER.findOne({
-            $or: [{ email }, { userName }]
+            $or: [{ email: normalizedEmail }, { userName: normalizedUserName }]
         });
 
         if (savedUser) {
@@ -30,8 +32,8 @@ router.post('/signup', async (req, res) => {
 
         const user = new USER({
             name,
-            email,
-            userName,
+            email: normalizedEmail,
+            userName: normalizedUserName,
             password: hashedPassword
         });
 
@@ -57,7 +59,7 @@ router.post("/signin", async (req, res) => {
     }
 
     try {
-        const savedUser = await USER.findOne({ email });
+        const savedUser = await USER.findOne({ email: email.trim().toLowerCase() });
 
         if (!savedUser) {
             return res.status(422).json({ error: "invalid email" });

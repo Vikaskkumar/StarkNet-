@@ -1,7 +1,4 @@
-mongoUrl = "mongodb+srv://kvikaskumar039_db_user:Y5Afqy4FeS1KlQjO@cluster0.cz57a1t.mongodb.net/?appName=Cluster0";
-Jwt_secret = "vikasvikasvikas"
+const mongoUrl = process.env.MONGODB_URI;
+const Jwt_secret = process.env.JWT_SECRET;
 
-module.exports = {
-  mongoUrl,
-  Jwt_secret
-};
+module.exports = { mongoUrl, Jwt_secret };

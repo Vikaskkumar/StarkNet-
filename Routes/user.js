@@ -13,7 +13,7 @@ router.get("/user/:id", async (req, res) => {
     }
 
     const posts = await POST.find({ postedBy: req.params.id })
-      .populate("postedBy", "_id name")
+      .populate("postedBy", "_id name Photo")
       .sort("-createdAt");
 
     return res.status(200).json({ user, posts });
@@ -29,6 +29,14 @@ router.put("/follow", requireLogin, async (req, res) => {
 
     if (!followId) {
       return res.status(422).json({ error: "followId is required" });
+    }
+    if (followId === req.user._id.toString()) {
+      return res.status(422).json({ error: "You cannot follow yourself" });
+    }
+
+    const userToFollow = await USER.findById(followId);
+    if (!userToFollow) {
+      return res.status(404).json({ error: "User not found" });
     }
 
     await USER.findByIdAndUpdate(
@@ -92,8 +100,9 @@ router.get("/myfollowingpost", requireLogin, async (req, res) => {
     const posts = await POST.find({
       postedBy: { $in: req.user.following }
     })
-      .populate("postedBy", "_id name")
-      .populate("comments.postedBy", "_id name")
+      .populate("postedBy", "_id name Photo")
+      .populate("comments.postedBy", "_id name Photo")
+      .sort("-createdAt");
 
     res.status(200).json(posts);
   } catch (error) {
@@ -105,6 +114,10 @@ router.get("/myfollowingpost", requireLogin, async (req, res) => {
 
 router.put("/uploadProfilePic", requireLogin, async (req, res) => {
   try {
+    if (!req.body.pic || typeof req.body.pic !== "string") {
+      return res.status(422).json({ error: "A profile picture URL is required" });
+    }
+
     const result = await USER.findByIdAndUpdate(
       req.user._id,
       {
@@ -124,7 +137,7 @@ router.put("/removeProfilePic", requireLogin, async (req, res) => {
   try {
     const user = await USER.findByIdAndUpdate(
       req.user._id,
-      { $unset: { photo: "" } },
+      { $unset: { Photo: "" } },
       { new: true }
     );
 

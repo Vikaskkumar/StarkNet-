@@ -87,7 +87,7 @@ export default function Myfollowingpost() {
 
             {/* HEADER */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
-              <img src={userimg} className="h-9 w-9 rounded-full ring-2 ring-cyan-500/20" />
+              <img src={post.postedBy?.Photo || userimg} alt="" className="h-9 w-9 rounded-full ring-2 ring-cyan-500/20" />
               <div>
                 <Link
                   to={`/profile/${post.postedBy?._id}`}
@@ -172,7 +172,7 @@ export default function Myfollowingpost() {
                         </div>
 
                         <p className="text-sm text-slate-300 leading-relaxed mt-0.5">
-                          {c.text}
+                          {c.comment}
                         </p>
                       </div>
                     </div>

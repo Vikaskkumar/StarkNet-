@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { Heart, MessageCircle, Send, Bookmark, Code2, X } from "lucide-react";
+import React, { useContext, useEffect, useState } from "react";
+import { Heart, MessageCircle, Send, Bookmark, X } from "lucide-react";
 import UserProfile from "../components/UserProfile";
 import { useNavigate } from "react-router-dom";
+import { LoginContext } from "../context/LoginContext";
 
 export default function Home() {
   const [data, setData] = useState([]);
@@ -9,6 +10,7 @@ export default function Home() {
   const [openComments, setOpenComments] = useState({});
   const [commentText, setCommentText] = useState({});
   const navigate = useNavigate();
+  const { setuserLogin } = useContext(LoginContext);
 
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -22,10 +24,18 @@ export default function Home() {
     fetch("/allposts", {
       headers: { Authorization: "Bearer " + token },
     })
-      .then(res => res.json())
-      .then(result => setData(result))
-      .catch(console.log);
-  }, []);
+      .then(async (res) => {
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "Unable to load posts");
+        setData(Array.isArray(result) ? result : []);
+      })
+      .catch(() => {
+        localStorage.removeItem("jwt");
+        localStorage.removeItem("user");
+        setuserLogin(false);
+        navigate("/Signin", { replace: true });
+      });
+  }, [navigate, setuserLogin]);
 
   const likepost = (id) => {
     fetch("/like", {
@@ -62,7 +72,7 @@ export default function Home() {
   };
 
   const makeComment = (text, id) => {
-    if (!text) return;
+    if (!text?.trim()) return;
 
     fetch("/comment", {
       method: "PUT",
@@ -70,7 +80,7 @@ export default function Home() {
         "Content-Type": "application/json",
         Authorization: "Bearer " + localStorage.getItem("jwt"),
       },
-      body: JSON.stringify({ postId: id, text }),
+      body: JSON.stringify({ postId: id, text: text.trim() }),
     })
       .then(res => res.json())
       .then(updatedPost => {
@@ -86,7 +96,7 @@ export default function Home() {
       <div className="w-full max-w-xl px-3 space-y-6">
 
         {data.map(post => {
-          const liked = post.likes.includes(currentUser._id);
+          const liked = post.likes?.includes(currentUser._id);
 
           return (
             <div
@@ -95,20 +105,21 @@ export default function Home() {
             >
               <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
                 <img
-                  src={post.postedBy?.photo}
+                  src={post.postedBy?.Photo}
+                  alt=""
                   className="h-9 w-9 rounded-full cursor-pointer"
-                  onClick={() => setOpenUser(post.postedBy._id)}
+                  onClick={() => post.postedBy?._id && setOpenUser(post.postedBy._id)}
                 />
 
                 <span
                   onClick={() => setOpenUser(post.postedBy._id)}
                   className="text-white text-sm font-semibold cursor-pointer hover:text-cyan-400"
                 >
-                  {post.postedBy.name}
+                  {post.postedBy?.name || "Unknown"}
                 </span>
               </div>
 
-              <img src={post.photo} className="w-full object-cover" />
+              <img src={post.photo} alt="post" className="w-full object-cover" />
 
               <div className="px-4 py-3 space-y-3">
                 <div className="flex justify-between items-center text-slate-400">
@@ -134,15 +145,15 @@ export default function Home() {
                 </div>
 
                 <p className="text-white text-sm font-semibold">
-                  {post.likes.length} developers liked this
+                  {post.likes?.length || 0} developers liked this
                 </p>
 
                 <p className="text-slate-300 text-sm">
                   <span
                     className="text-white font-semibold mr-1 cursor-pointer"
-                    onClick={() => setOpenUser(post.postedBy._id)}
+                    onClick={() => post.postedBy?._id && setOpenUser(post.postedBy._id)}
                   >
-                    {post.postedBy.name}
+                    {post.postedBy?.name || "Unknown"}
                   </span>
                   {post.body}
                 </p>
@@ -150,8 +161,8 @@ export default function Home() {
 
               {openComments[post._id] && (
                 <div className="bg-black/70 border-t border-white/10 px-4 py-4 space-y-4">
-                  {post.comments.map((c, i) => (
-                    <div key={i} className="flex gap-3">
+                  {post.comments?.map((c) => (
+                    <div key={c._id} className="flex gap-3">
                       <p className="text-white text-sm font-semibold">
                         {c.postedBy?.name}
                       </p>

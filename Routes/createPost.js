@@ -1,22 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
 const requireLogin = require('../middlewares/requireLogin');
 const POST = require('../models/post');
-const USER = require('../models/User')
 
 
 router.post("/createPost", requireLogin, (req, res) => {
 
-    console.log("createpost hit");
     const { body, pic } = req.body;
 
-    if (!pic || !body) {
+    if (!pic || !body?.trim()) {
         return res.status(422).json({ error: "please add all the fields" });
     }
 
     const post = new POST({
-        body,
+        body: body.trim(),
         photo: pic,
         postedBy: req.user
     });
@@ -40,14 +37,18 @@ router.post("/createPost", requireLogin, (req, res) => {
 router.get("/allposts", requireLogin, (req, res) => {
     POST.find()
         .populate("postedBy", "_id name Photo")
+        .populate("comments.postedBy", "_id name Photo")
+        .sort("-createdAt")
         .then(posts => res.json(posts))
-        .catch(err => console.log(err))
+        .catch(() => res.status(500).json({ error: "Unable to load posts" }))
 })
 
 router.get("/myposts", requireLogin, (req, res) => {
     POST.find({ postedBy: req.user._id })
-        .populate("postedBy", "_id name")
+        .populate("postedBy", "_id name Photo")
+        .sort("-createdAt")
         .then(myposts => res.json(myposts))
+        .catch(() => res.status(500).json({ error: "Unable to load posts" }))
 });
 
 router.get("/myprofile", requireLogin, (req, res) => {
@@ -56,13 +57,22 @@ router.get("/myprofile", requireLogin, (req, res) => {
 
 router.put("/like", requireLogin, async (req, res) => {
   try {
+    if (!req.body.postId) {
+      return res.status(422).json({ error: "postId is required" });
+    }
     const result = await POST.findByIdAndUpdate(
       req.body.postId,
       {
         $addToSet: { likes: req.user._id }, 
       },
       { new: true }
-    ).populate("postedBy", "_id name");
+    )
+      .populate("postedBy", "_id name Photo")
+      .populate("comments.postedBy", "_id name Photo");
+
+    if (!result) {
+      return res.status(404).json({ error: "Post not found" });
+    }
 
     return res.json(result);
   } catch (err) {
@@ -72,25 +82,37 @@ router.put("/like", requireLogin, async (req, res) => {
 
 router.put("/unlike", requireLogin, async (req, res) => {
   try {
+    if (!req.body.postId) {
+      return res.status(422).json({ error: "postId is required" });
+    }
     const result = await POST.findByIdAndUpdate(
       req.body.postId,
       {
         $pull: { likes: req.user._id },
       },
       { new: true }
-    ).populate("postedBy", "_id name");
+    )
+      .populate("postedBy", "_id name Photo")
+      .populate("comments.postedBy", "_id name Photo");
+
+    if (!result) {
+      return res.status(404).json({ error: "Post not found" });
+    }
 
     return res.json(result);
   } catch (err) {
     return res.status(422).json({ error: err.message });
-  }8
+  }
 });
 
 
 router.put("/comment", requireLogin, async (req, res) => {
   try {
+    if (!req.body.postId || !req.body.text?.trim()) {
+      return res.status(422).json({ error: "postId and comment text are required" });
+    }
     const comment = {
-      comment: req.body.text,
+      comment: req.body.text.trim(),
       postedBy: req.user._id,
     };
 
@@ -101,8 +123,12 @@ router.put("/comment", requireLogin, async (req, res) => {
       },
       { new: true }
     )
-      .populate("postedBy", "_id name")
-      .populate("comments.postedBy", "_id name");
+      .populate("postedBy", "_id name Photo")
+      .populate("comments.postedBy", "_id name Photo");
+
+    if (!result) {
+      return res.status(404).json({ error: "Post not found" });
+    }
 
     return res.json(result);
   } catch (error) {
